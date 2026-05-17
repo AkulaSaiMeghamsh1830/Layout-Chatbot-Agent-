@@ -2,8 +2,8 @@ services:
   - type: web
     name: layout-agent
     runtime: node
-    buildCommand: cd client && npm install && npm run build && cd ../server && npm install
-    startCommand: node server/index.js
+    buildCommand: npm run build
+    startCommand: npm start
     envVars:
       - key: GEMINI_API_KEY
         sync: false
