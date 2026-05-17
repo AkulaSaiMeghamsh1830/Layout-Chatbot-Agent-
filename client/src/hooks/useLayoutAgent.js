@@ -21,7 +21,14 @@ export function useLayoutAgent() {
   const [lastActions, setLastActions] = useState([]);
   const historyRef = useRef([]);
 
+  const lastRequestRef = useRef(0);
+
   const sendMessage = async (text) => {
+    const now = Date.now();
+    const gap = now - lastRequestRef.current;
+    if (gap < 4000) await new Promise((r) => setTimeout(r, 4000 - gap));
+    lastRequestRef.current = Date.now();
+
     const userMsg = { role: 'user', content: text };
     setMessages((prev) => [...prev, userMsg]);
     setLoading(true);

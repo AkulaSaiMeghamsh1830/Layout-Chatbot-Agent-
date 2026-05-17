@@ -2,7 +2,7 @@
 
 ## 🚀 Live Demo
 
-> **[➡ Click here to open the live app](https://sad-olives-change.loca.lt)**
+> **[➡ Click here to open the live app](https://short-shirts-invite.loca.lt)**
 >
 > If prompted for a tunnel password, visit [loca.lt/mytunnelpassword](https://loca.lt/mytunnelpassword) on your device, copy the IP shown, and paste it into the password box.
 
