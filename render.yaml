@@ -1,11 +1,12 @@
 services:
   - type: web
-    name: layout-agent-server
+    name: layout-agent
     runtime: node
-    rootDir: server
-    buildCommand: npm install
-    startCommand: npm start
+    buildCommand: cd client && npm install && npm run build && cd ../server && npm install
+    startCommand: node server/index.js
     envVars:
       - key: GEMINI_API_KEY
         sync: false
+      - key: NODE_ENV
+        value: production
     autoDeploy: true

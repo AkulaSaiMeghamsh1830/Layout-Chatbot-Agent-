@@ -2,7 +2,11 @@ import { useState, useRef } from 'react';
 import axios from 'axios';
 import initialLayout from '../data/initialLayout.json';
 
-const API_URL = (import.meta.env.VITE_API_URL || 'http://localhost:3001') + '/api/chat';
+const API_URL = import.meta.env.VITE_API_URL
+  ? import.meta.env.VITE_API_URL + '/api/chat'
+  : window.location.origin.includes('localhost')
+    ? 'http://localhost:3001/api/chat'
+    : '/api/chat';
 
 export function useLayoutAgent() {
   const [layout, setLayout] = useState(initialLayout);
