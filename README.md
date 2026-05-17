@@ -1,5 +1,13 @@
 # Layout Agent — AI-Powered Design Layout Transformation
 
+## 🚀 Live Demo
+
+> **[➡ Click here to open the live app](https://sad-olives-change.loca.lt)**
+>
+> If prompted for a tunnel password, visit [loca.lt/mytunnelpassword](https://loca.lt/mytunnelpassword) on your device, copy the IP shown, and paste it into the password box.
+
+---
+
 > Chat with your design canvas. Modify furniture & sofa advertisement layouts using plain English, powered by Google Gemini AI.
 
 ---
