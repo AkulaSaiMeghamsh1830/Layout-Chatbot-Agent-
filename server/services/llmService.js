@@ -8,6 +8,12 @@ function isRateLimit(err) {
   return msg.includes('429') || msg.includes('RESOURCE_EXHAUSTED') || msg.includes('quota');
 }
 
+function isDailyQuotaExhausted(err) {
+  const msg = err?.message || '';
+  return (msg.includes('429') || msg.includes('RESOURCE_EXHAUSTED')) &&
+    (msg.includes('exceeded your current quota') || msg.includes('billing') || msg.includes('plan'));
+}
+
 function sleep(ms) {
   return new Promise((resolve) => setTimeout(resolve, ms));
 }
@@ -45,6 +51,7 @@ async function callGemini(systemPrompt, history, userMessage) {
         await sleep(RETRY_DELAYS[attempt]);
         continue;
       }
+      if (isDailyQuotaExhausted(err)) throw err; // no point retrying daily quota
       throw err;
     }
   }
@@ -62,7 +69,7 @@ async function callGroq(systemPrompt, history, userMessage) {
     { role: 'user', content: userMessage },
   ];
   const response = await client.chat.completions.create({
-    model: 'llama-3.1-8b-instant',
+    model: 'llama-3.3-70b-versatile',
     messages,
     temperature: 0.2,
     response_format: { type: 'json_object' },
@@ -78,8 +85,8 @@ async function callLLM(systemPrompt, history, userMessage) {
     try {
       return await callGemini(systemPrompt, history, userMessage);
     } catch (err) {
-      if (isRateLimit(err) && process.env.GROQ_API_KEY) {
-        console.warn('[LLM] Gemini quota exhausted — falling back to Groq');
+      if ((isRateLimit(err) || isDailyQuotaExhausted(err)) && process.env.GROQ_API_KEY) {
+        console.warn('[LLM] Gemini unavailable — falling back to Groq instantly');
       } else {
         throw err;
       }
