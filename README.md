@@ -33,6 +33,17 @@ The sofa loading animation stays on screen during retries. Only if all 3 retries
 
 ---
 
+## Before / After
+
+See how a single chat instruction transforms the sofa ad layout in real time:
+
+| Before | After |
+|:---:|:---:|
+| ![Before](docs/before.png) | ![After](docs/after.png) |
+| Original layout with default element positions | AI-transformed: headline moved to top, badge repositioned |
+
+---
+
 ## What it does
 
 Layout Agent lets you talk to your design canvas. Send natural language instructions like *"Move the headline to the top"*, *"Make the discount badge bigger"*, or *"Change the sofa color to blue"* — and watch the layout JSON and wireframe preview update live.
