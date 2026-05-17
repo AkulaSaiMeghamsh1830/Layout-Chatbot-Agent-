@@ -1,6 +1,7 @@
 const { GoogleGenAI } = require('@google/genai');
+const OpenAI = require('openai');
 
-const RETRY_DELAYS = [15000, 30000, 60000]; // 15s, 30s, 60s
+const RETRY_DELAYS = [15000, 30000, 60000];
 
 function isRateLimit(err) {
   const msg = err?.message || '';
@@ -11,15 +12,17 @@ function sleep(ms) {
   return new Promise((resolve) => setTimeout(resolve, ms));
 }
 
-/**
- * Calls Gemini with the system prompt, conversation history, and new user message.
- * Auto-retries up to 3 times on rate-limit errors with exponential backoff.
- * Returns parsed JSON response from the LLM.
- */
-async function callLLM(systemPrompt, history, userMessage) {
-  const apiKey = process.env.GEMINI_API_KEY || process.env.GROQ_API_KEY;
-  const ai = new GoogleGenAI({ apiKey });
+function cleanJSON(raw) {
+  return raw
+    .trim()
+    .replace(/^```json\s*/i, '')
+    .replace(/^```\s*/i, '')
+    .replace(/```\s*$/i, '')
+    .trim();
+}
 
+async function callGemini(systemPrompt, history, userMessage) {
+  const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY });
   const contents = history.map((m) => ({
     role: m.role === 'assistant' ? 'model' : 'user',
     parts: [{ text: m.content }],
@@ -32,33 +35,60 @@ async function callLLM(systemPrompt, history, userMessage) {
       const response = await ai.models.generateContent({
         model: 'gemini-2.0-flash',
         contents,
-        config: {
-          systemInstruction: systemPrompt,
-          temperature: 0.2,
-          responseMimeType: 'application/json',
-        },
+        config: { systemInstruction: systemPrompt, temperature: 0.2, responseMimeType: 'application/json' },
       });
-
-      const rawText = response.text.trim();
-      const cleaned = rawText
-        .replace(/^```json\s*/i, '')
-        .replace(/^```\s*/i, '')
-        .replace(/```\s*$/i, '')
-        .trim();
-      return JSON.parse(cleaned);
-
+      return JSON.parse(cleanJSON(response.text));
     } catch (err) {
       lastErr = err;
       if (isRateLimit(err) && attempt < RETRY_DELAYS.length) {
-        const wait = RETRY_DELAYS[attempt];
-        console.warn(`[LLM] Rate limit hit — retrying in ${wait / 1000}s (attempt ${attempt + 1}/${RETRY_DELAYS.length})`);
-        await sleep(wait);
+        console.warn(`[Gemini] Rate limit — retrying in ${RETRY_DELAYS[attempt] / 1000}s`);
+        await sleep(RETRY_DELAYS[attempt]);
         continue;
       }
       throw err;
     }
   }
   throw lastErr;
+}
+
+async function callGroq(systemPrompt, history, userMessage) {
+  const client = new OpenAI({
+    apiKey: process.env.GROQ_API_KEY,
+    baseURL: 'https://api.groq.com/openai/v1',
+  });
+  const messages = [
+    { role: 'system', content: systemPrompt },
+    ...history.map((m) => ({ role: m.role === 'assistant' ? 'assistant' : 'user', content: m.content })),
+    { role: 'user', content: userMessage },
+  ];
+  const response = await client.chat.completions.create({
+    model: 'llama-3.3-70b-versatile',
+    messages,
+    temperature: 0.2,
+    response_format: { type: 'json_object' },
+  });
+  return JSON.parse(cleanJSON(response.choices[0].message.content));
+}
+
+/**
+ * Tries Gemini first. Falls back to Groq automatically if Gemini quota is exhausted.
+ */
+async function callLLM(systemPrompt, history, userMessage) {
+  if (process.env.GEMINI_API_KEY) {
+    try {
+      return await callGemini(systemPrompt, history, userMessage);
+    } catch (err) {
+      if (isRateLimit(err) && process.env.GROQ_API_KEY) {
+        console.warn('[LLM] Gemini quota exhausted — falling back to Groq');
+      } else {
+        throw err;
+      }
+    }
+  }
+  if (process.env.GROQ_API_KEY) {
+    return await callGroq(systemPrompt, history, userMessage);
+  }
+  throw new Error('No LLM API key configured. Set GEMINI_API_KEY or GROQ_API_KEY in server/.env');
 }
 
 module.exports = { callLLM };
