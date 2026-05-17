@@ -44,6 +44,39 @@ See how a single chat instruction transforms the sofa ad layout in real time:
 
 ---
 
+## Approach
+
+This project uses a **hybrid LLM + code** strategy to transform design layouts via natural language.
+
+### How it works
+1. **User types an instruction** (e.g. "Move the headline to the top") in the chat panel
+2. The **Express backend** receives the current layout JSON + conversation history + instruction
+3. For **geometric operations** (e.g. aspect ratio conversion), deterministic math in `layoutTransforms.js` runs first — guaranteed correctness, no LLM needed
+4. For **semantic operations** (move, recolor, resize named elements), **Gemini 2.0 Flash** reasons about which node to modify and returns an updated layout JSON
+5. The response is **validated** by `jsonValidator.js` before ever reaching the frontend — invalid LLM output never corrupts the layout state
+6. The **React frontend** updates the wireframe preview and JSON viewer live
+
+### Key design decisions
+- **Stateless server** — the full layout JSON travels with every request; no server-side session needed
+- **Compact system prompt** — the layout JSON is embedded per-request so the LLM always has fresh context
+- **Auto-retry on rate limits** — if Gemini returns a 429, the server silently retries up to 3× (15s → 30s → 60s backoff)
+- **Conversation context** — last 3 turns sent with each request so follow-ups like *"make it bigger"* resolve correctly
+
+> Full breakdown of trade-offs and engineering decisions → [`APPROACH.md`](./APPROACH.md)
+
+---
+
+## Walkthrough
+
+> 🎥 **Loom video walkthrough:** _[Add your Loom link here]_
+>
+> The walkthrough covers:
+> - Live demo of chat-driven layout transformation
+> - How the sofa ad updates in real time from natural language instructions
+> - Code overview of the LLM prompt, validation, and retry logic
+
+---
+
 ## What it does
 
 Layout Agent lets you talk to your design canvas. Send natural language instructions like *"Move the headline to the top"*, *"Make the discount badge bigger"*, or *"Change the sofa color to blue"* — and watch the layout JSON and wireframe preview update live.
