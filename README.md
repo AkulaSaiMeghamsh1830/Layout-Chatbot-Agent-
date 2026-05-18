@@ -74,16 +74,7 @@ This project uses a **hybrid LLM + code** strategy to transform design layouts v
 
 ---
 
-## Walkthrough
 
-> 🎥 **Loom video walkthrough:** _[Add your Loom link here]_
->
-> The walkthrough covers:
-> - Live demo of chat-driven layout transformation
-> - How the sofa ad updates in real time from natural language instructions
-> - Code overview of the LLM prompt, validation, and retry logic
-
----
 
 ## What it does
 
