@@ -2,7 +2,7 @@
 
 ## 🚀 Live Demo
 
-> **[➡ Click here to open the live app](https://plenty-moments-sing.loca.lt)**
+> **[➡ Click here to open the live app](https://nrxbu-157-50-143-110.run.pinggy-free.link)**
 >
 > If prompted for a tunnel password, visit [loca.lt/mytunnelpassword](https://loca.lt/mytunnelpassword) on your device, copy the IP shown, and paste it into the password box.
 
