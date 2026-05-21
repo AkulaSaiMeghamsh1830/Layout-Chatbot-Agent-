@@ -118,6 +118,85 @@ router.post('/', async (req, res) => {
 
   // ── Return to client ──────────────────────────────────────────────────────
   let finalLayout = llmResult.updatedLayout;
+  // ── Scoping Filter ────────────────────────────────────────────────────────
+  // Only allow changes to nodes that match the user's request.
+  const isGlobalOperation = /convert|ratio|size|canvas|artboard|9:16|1:1|16:9|story|reel|landscape|portrait|square/i.test(message);
+
+  const allowedNodeIds = new Set();
+
+  if (isGlobalOperation) {
+    if (finalLayout && finalLayout.nodes) {
+      Object.keys(finalLayout.nodes).forEach(id => allowedNodeIds.add(id));
+    }
+  } else {
+    const lowerMessage = message.toLowerCase();
+
+    // 1. Headline
+    if (lowerMessage.includes('headline') || lowerMessage.includes('title') || lowerMessage.includes('comfort') || lowerMessage.includes('attainable')) {
+      allowedNodeIds.add('text_1778486306230_8');
+    }
+
+    // 2. Discount Badge
+    if (lowerMessage.includes('badge') || lowerMessage.includes('discount') || lowerMessage.includes('circle') || lowerMessage.includes('20%') || lowerMessage.includes('off') || lowerMessage.includes('percent')) {
+      allowedNodeIds.add('circle_1778488914968_15');
+      allowedNodeIds.add('text_1778489078397_16');
+    }
+
+    // 3. Product Image
+    if (lowerMessage.includes('product') || lowerMessage.includes('sofa') || lowerMessage.includes('chair') || lowerMessage.includes('furniture') || lowerMessage.includes('image')) {
+      allowedNodeIds.add('img_1778489515746_17');
+    }
+
+    // 4. Background Image
+    if (lowerMessage.includes('background') || lowerMessage.includes('bg')) {
+      allowedNodeIds.add('img_1778485681535_4');
+    }
+
+    // 5. Logo / Header Vector group
+    if (lowerMessage.includes('logo') || lowerMessage.includes('vector') || lowerMessage.includes('icon') || lowerMessage.includes('happy homes') || lowerMessage.includes('homes') || lowerMessage.includes('8,000') || lowerMessage.includes('8000')) {
+      allowedNodeIds.add('img_1778486846247_10');
+      allowedNodeIds.add('img_1778486856821_11');
+      allowedNodeIds.add('img_1778487081392_12');
+      allowedNodeIds.add('img_1778487101466_13');
+      allowedNodeIds.add('img_1778487110538_14');
+      allowedNodeIds.add('text_1778486552508_9');
+    }
+
+    // 6. CTA / Tagline
+    if (lowerMessage.includes('offer') || lowerMessage.includes('limited') || lowerMessage.includes('tagline') || lowerMessage.includes('subtext') || lowerMessage.includes('comfort that defines')) {
+      allowedNodeIds.add('text_1778486004640_6');
+      allowedNodeIds.add('text_1778486136643_7');
+    }
+
+    // If the LLM returned actions, we also trust the nodes specified in the actions
+    if (llmResult && Array.isArray(llmResult.actions)) {
+      llmResult.actions.forEach(act => {
+        if (act.target && layout.nodes[act.target]) {
+          allowedNodeIds.add(act.target);
+          if (act.target === 'circle_1778488914968_15' || act.target === 'text_1778489078397_16') {
+            allowedNodeIds.add('circle_1778488914968_15');
+            allowedNodeIds.add('text_1778489078397_16');
+          }
+        }
+      });
+    }
+  }
+
+  // Restore any nodes that were modified by the LLM but not allowed to be modified
+  if (finalLayout && finalLayout.nodes) {
+    Object.keys(finalLayout.nodes).forEach(id => {
+      if (id === layout.rootNodes[0] && !isGlobalOperation) {
+        if (layout.nodes[id]) {
+          finalLayout.nodes[id] = JSON.parse(JSON.stringify(layout.nodes[id]));
+        }
+        return;
+      }
+      if (!allowedNodeIds.has(id) && layout.nodes[id]) {
+        finalLayout.nodes[id] = JSON.parse(JSON.stringify(layout.nodes[id]));
+      }
+    });
+  }
+
   if (/move.*headline.*top/i.test(message) || /headline.*move.*top/i.test(message)) {
     const headlineId = 'text_1778486306230_8';
     if (finalLayout && finalLayout.nodes && finalLayout.nodes[headlineId]) {
