@@ -23,3 +23,8 @@ Thumbs.db
 # Editor
 .vscode/
 .idea/
+
+# Local cache & Vercel build files
+.npm-cache/
+.vercel/
+

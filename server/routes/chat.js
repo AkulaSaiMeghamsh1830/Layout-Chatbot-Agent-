@@ -33,6 +33,56 @@ router.post('/', async (req, res) => {
     }
   }
 
+  // Deterministic Headline Movement Solver:
+  const headlineId = 'text_1778486306230_8';
+  if (preProcessedLayout.nodes && preProcessedLayout.nodes[headlineId]) {
+    const node = preProcessedLayout.nodes[headlineId];
+    
+    // 1. Move Headline Up
+    if (/move.*headline.*up/i.test(message) || /headline.*up/i.test(message) || /move.*headline.*higher/i.test(message) || /headline.*higher/i.test(message)) {
+      node.ny = Math.max(0.04, node.ny - 0.05);
+      node.y = node.ny * (preProcessedLayout.nodes[preProcessedLayout.rootNodes[0]]?.height || 1080);
+      return res.json({
+        updatedLayout: preProcessedLayout,
+        assistantMessage: "Headline moved up slightly.",
+        actions: [{ type: "move", target: headlineId }]
+      });
+    }
+    
+    // 2. Move Headline Down
+    if (/move.*headline.*down/i.test(message) || /headline.*down/i.test(message) || /move.*headline.*lower/i.test(message) || /headline.*lower/i.test(message)) {
+      node.ny = Math.min(0.8, node.ny + 0.05);
+      node.y = node.ny * (preProcessedLayout.nodes[preProcessedLayout.rootNodes[0]]?.height || 1080);
+      return res.json({
+        updatedLayout: preProcessedLayout,
+        assistantMessage: "Headline moved down slightly.",
+        actions: [{ type: "move", target: headlineId }]
+      });
+    }
+    
+    // 3. Move Headline to Top
+    if (/move.*headline.*top/i.test(message) || /headline.*move.*top/i.test(message)) {
+      // Move only the headline to the top
+      node.nx = 0.1092;
+      node.ny = 0.05;
+      node.x = node.nx * (preProcessedLayout.nodes[preProcessedLayout.rootNodes[0]]?.width || 1080);
+      node.y = node.ny * (preProcessedLayout.nodes[preProcessedLayout.rootNodes[0]]?.height || 1080);
+      node.width = 844.09;
+      node.height = 378.37;
+      node.nw = 0.7816;
+      node.nh = 0.3503;
+      if (node.style && node.style.visual) {
+        node.style.visual.textAlign = 'center';
+      }
+
+      return res.json({
+        updatedLayout: preProcessedLayout,
+        assistantMessage: "Headline moved to the top.",
+        actions: [{ type: "move", target: headlineId }]
+      });
+    }
+  }
+
   // ── Build system prompt ───────────────────────────────────────────────────
   const systemPrompt = buildSystemPrompt(preProcessedLayout);
 
@@ -67,8 +117,27 @@ router.post('/', async (req, res) => {
   }
 
   // ── Return to client ──────────────────────────────────────────────────────
+  let finalLayout = llmResult.updatedLayout;
+  if (/move.*headline.*top/i.test(message) || /headline.*move.*top/i.test(message)) {
+    const headlineId = 'text_1778486306230_8';
+    if (finalLayout && finalLayout.nodes && finalLayout.nodes[headlineId]) {
+      const node = finalLayout.nodes[headlineId];
+      node.nx = 0.1092;
+      node.ny = 0.05;
+      node.x = node.nx * (finalLayout.nodes[finalLayout.rootNodes[0]]?.width || 1080);
+      node.y = node.ny * (finalLayout.nodes[finalLayout.rootNodes[0]]?.height || 1080);
+      node.width = 844.09;
+      node.height = 378.37;
+      node.nw = 0.7816;
+      node.nh = 0.3503;
+      if (node.style && node.style.visual) {
+        node.style.visual.textAlign = 'center';
+      }
+    }
+  }
+
   return res.json({
-    updatedLayout: llmResult.updatedLayout,
+    updatedLayout: finalLayout,
     assistantMessage: llmResult.assistantMessage,
     actions: llmResult.actions || [],
   });

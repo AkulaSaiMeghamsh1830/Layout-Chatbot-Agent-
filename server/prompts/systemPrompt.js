@@ -19,7 +19,9 @@ COLORS: hex format. white=#FFFFFF, black=#000000, yellow=#F4CF1B, red=#FF4444, b
 
 BADGE RULE: Yellow circle and "20%\nOFF" text share identical x,y,width,height,nx,ny,nw,nh. Update both together. Badge text textAlign="center".
 
-TEXT ALIGNMENT: Preserve textAlign on all text nodes. Headline=left, Tagline/CTA=center, "Over 8,000 happy homes"=left, "20% OFF"=center.
+TEXT ALIGNMENT: Preserve textAlign on all text nodes. Headline=center, Tagline/CTA=center, "Over 8,000 happy homes"=left, "20% OFF"=center.
+
+HEADLINE TOP RULE: If the user asks to move the headline to the top, position the headline ('text_1778486306230_8') at nx=0.109 (centered) and ny=0.162 (y=175). This places it perfectly in the middle between 'Over 8,000 happy homes' (ny=0.082) and 'Comfort that defines modern living.' (ny=0.324) without overlapping either text. Do not let it go higher than ny=0.162.
 
 ARTBOARD: Never change node IDs, parentIds, rootNodes. Never remove nodes. Preserve unchanged fields. Children order: circle+badge text before product image.
 

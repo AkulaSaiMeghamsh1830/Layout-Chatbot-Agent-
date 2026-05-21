@@ -1,7 +1,7 @@
 const { GoogleGenAI } = require('@google/genai');
 const OpenAI = require('openai');
 
-const RETRY_DELAYS = [15000, 30000, 60000];
+const RETRY_DELAYS = [1000, 2000];
 
 function isRateLimit(err) {
   const msg = err?.message || '';
@@ -46,12 +46,12 @@ async function callGemini(systemPrompt, history, userMessage) {
       return JSON.parse(cleanJSON(response.text));
     } catch (err) {
       lastErr = err;
+      if (isDailyQuotaExhausted(err)) throw err; // no point retrying daily quota, throw immediately
       if (isRateLimit(err) && attempt < RETRY_DELAYS.length) {
         console.warn(`[Gemini] Rate limit — retrying in ${RETRY_DELAYS[attempt] / 1000}s`);
         await sleep(RETRY_DELAYS[attempt]);
         continue;
       }
-      if (isDailyQuotaExhausted(err)) throw err; // no point retrying daily quota
       throw err;
     }
   }

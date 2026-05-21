@@ -1,0 +1,26 @@
+require('dotenv').config();
+const express = require('express');
+const cors = require('cors');
+const chatRoute = require('./routes/chat');
+
+const app = express();
+
+// ── Middleware ────────────────────────────────────────────────────────────────
+app.use(cors({ origin: true, credentials: true }));
+app.use(express.json({ limit: '15mb' })); // Layout JSON can be large
+
+// ── Routes ────────────────────────────────────────────────────────────────────
+app.use('/api/chat', chatRoute);
+
+// ── Health check ──────────────────────────────────────────────────────────────
+app.get('/api/health', (_req, res) => {
+  res.json({ status: 'ok', model: 'llama-3.3-70b-versatile (Groq)', timestamp: new Date().toISOString() });
+});
+
+// ── Global error handler ──────────────────────────────────────────────────────
+app.use((err, _req, res, _next) => {
+  console.error('[Unhandled Error]', err);
+  res.status(500).json({ error: 'Internal server error', detail: err.message });
+});
+
+module.exports = app;

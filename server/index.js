@@ -1,34 +1,13 @@
-require('dotenv').config();
-const express = require('express');
-const cors = require('cors');
+const app = require('./app');
 const path = require('path');
-const chatRoute = require('./routes/chat');
+const express = require('express');
 
-const app = express();
 const PORT = process.env.PORT || 3001;
-
-// ── Middleware ────────────────────────────────────────────────────────────────
-app.use(cors({ origin: true, credentials: true }));
-app.use(express.json({ limit: '15mb' })); // Layout JSON can be large
-
-// ── Routes ────────────────────────────────────────────────────────────────────
-app.use('/api/chat', chatRoute);
-
-// ── Health check ──────────────────────────────────────────────────────────────
-app.get('/api/health', (_req, res) => {
-  res.json({ status: 'ok', model: 'llama-3.3-70b-versatile (Groq)', timestamp: new Date().toISOString() });
-});
 
 // ── Serve React frontend (production build) ──────────────────────────────────
 const clientDist = path.join(__dirname, '../client/dist');
 app.use(express.static(clientDist));
-app.get('/{*path}', (_req, res) => res.sendFile(path.join(clientDist, 'index.html')));
-
-// ── Global error handler ──────────────────────────────────────────────────────
-app.use((err, _req, res, _next) => {
-  console.error('[Unhandled Error]', err);
-  res.status(500).json({ error: 'Internal server error', detail: err.message });
-});
+app.get('*', (_req, res) => res.sendFile(path.join(clientDist, 'index.html')));
 
 // ── Start ─────────────────────────────────────────────────────────────────────
 app.listen(PORT, () => {
